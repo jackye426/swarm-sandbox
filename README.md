@@ -1,39 +1,39 @@
 # swarm-sandbox
 
-Minimal zero-dependency Node healthcheck sandbox. No `npm install` required.
+Minimal, zero-dependency Node.js sandbox project.
 
 ## Purpose
 
-This repo validates that a minimal Node.js project can bootstrap and self-verify
-using only built-in modules (`fs`, `path`). It serves as a zero-dependency
-baseline for testing repo scaffolding and healthcheck tooling.
+This repository is a self-validating baseline. It contains a healthcheck
+script that confirms the repository structure and `package.json` manifest
+integrity, so any clone can prove it is well-formed with no install step.
 
 ## Usage
 
-No installation needed. Run directly with Node >= 18:
+Requires Node.js >= 18. No dependencies, no `npm install` needed.
 
 ```sh
-npm test
-npm run healthcheck
+npm test            # runs the healthcheck
+npm run healthcheck # same check, explicit
 node scripts/healthcheck.js
 ```
 
-All three commands are equivalent and require no prior `npm install`.
+Exit code `0` means all checks passed; exit code `1` means one or more
+checks failed (each failure is printed on its own line).
 
-## How It Works
+## How the healthcheck works
 
-`scripts/healthcheck.js` resolves the repo root via `path.resolve(__dirname, '..')`,
-then runs the following checks in sequence, collecting all failures before exiting:
+`scripts/healthcheck.js` uses only Node built-in modules (`fs`, `path`,
+`process`). It:
 
-1. **File existence** — verifies each entry in `REQUIRED_FILES` (`package.json`,
-   `README.md`, `scripts/healthcheck.js`) is present and is a regular file.
-2. **README non-empty** — reads `README.md` and confirms it has non-whitespace content.
-3. **package.json validity** — parses `package.json` as JSON and reports any syntax error.
-4. **Script keys** — confirms `scripts.healthcheck` and `scripts.test` exist in
-   `package.json` (checks key presence only, not command values).
-
-Exits `0` when all checks pass, `1` with a summary of failures otherwise.
-
-## Requirements
-
-- Node >= 18
+1. Resolves the repository root from its own location
+   (`path.resolve(__dirname, '..')`), not the current working directory.
+2. Verifies each file in a single `REQUIRED_FILES` manifest exists
+   (`README.md`, `package.json`, `scripts/healthcheck.js`).
+   `.gitignore` is intentionally not required.
+3. Parses `package.json` inside a `try/catch`; invalid JSON is reported
+   as a clean failure.
+4. Confirms the `scripts.healthcheck` and `scripts.test` keys exist
+   (presence only — never their command values).
+5. Collects all failures, prints `ok`/`fail` status lines, and exits
+   `0` on success or `1` on failure.

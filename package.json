@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Minimal zero-dependency Node healthcheck project.",
+  "description": "Minimal zero-dependency Node healthcheck sandbox.",
   "engines": {
     "node": ">=18"
   },
