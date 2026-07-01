@@ -1,0 +1,14 @@
+{
+  "name": "swarm-sandbox",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Minimal zero-dependency Node healthcheck project.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "healthcheck": "node scripts/healthcheck.js",
+    "test": "node scripts/healthcheck.js"
+  }
+}
