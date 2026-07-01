@@ -1,0 +1,232 @@
+AUTHORIZATION: This task (T-005) is approved and IN_PROGRESS.
+All human approvals have been recorded. Proceed directly with implementation.
+Do not stop to ask for approval — implement all changes described below now.
+
+# Implementation Plan: T-005 — Bootstrap swarm-sandbox healthcheck project
+
+## Overview
+
+Three source files, zero dependencies, one atomic commit. The plan below maps every acceptance criterion to concrete file content, verification commands, and evidence to capture.
+
+---
+
+## Deliverables
+
+| File | Purpose |
+|------|---------|
+| `package.json` | Manifest with private flag, engines, scripts, no deps |
+| `scripts/healthcheck.js` | Self-validation using only Node built-ins |
+| `README.md` | Purpose, usage, how-it-works documentation |
+
+Optional (pending approval, not committed silently): `.gitignore`.
+
+---
+
+## File Specifications
+
+### 1. `package.json`
+
+```json
+{
+  "name": "swarm-sandbox",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Minimal zero-dependency Node.js project with a self-validating healthcheck.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "healthcheck": "node scripts/healthcheck.js",
+    "test": "node scripts/healthcheck.js"
+  }
+}
+```
+
+Notes:
+- No `dependencies` / `devDependencies` blocks at all (satisfies AC-2 and constraint).
+- `scripts.test` delegates directly to the healthcheck script.
+- No `"type": "module"` (CommonJS).
+
+### 2. `scripts/healthcheck.js`
+
+```js
+// scripts/healthcheck.js
+// Zero-dependency repo healthcheck. Node built-ins only. CommonJS. No shebang.
+
+const fs = require('fs');
+const path = require('path');
+
+// Resolve repo root from THIS file's location, never process.cwd().
+const ROOT = path.resolve(__dirname, '..');
+
+// Single manifest of required files. Deliberately excludes .gitignore.
+const REQUIRED_FILES = ['package.json', 'README.md', 'scripts/healthcheck.js'];
+
+// Script keys that must be present in package.json (keys only, not values).
+const REQUIRED_SCRIPT_KEYS = ['healthcheck', 'test'];
+
+const failures = [];
+
+// 1. File existence checks.
+for (const rel of REQUIRED_FILES) {
+  const abs = path.resolve(ROOT, rel);
+  if (fs.existsSync(abs)) {
+    console.log(`ok    file present: ${rel}`);
+  } else {
+    console.log(`fail  missing required file: ${rel}`);
+    failures.push(`missing required file: ${rel}`);
+  }
+}
+
+// 2. Parse and validate package.json manifest.
+const pkgPath = path.resolve(ROOT, 'package.json');
+let pkg = null;
+
+if (fs.existsSync(pkgPath)) {
+  let raw;
+  try {
+    raw = fs.readFileSync(pkgPath, 'utf8');
+    pkg = JSON.parse(raw);
+    console.log('ok    package.json is valid JSON');
+  } catch (err) {
+    console.log(`fail  package.json is invalid JSON: ${err.message}`);
+    failures.push(`invalid JSON in package.json: ${err.message}`);
+  }
+}
+
+// 3. Verify required script keys exist (presence only).
+if (pkg) {
+  const scripts = pkg.scripts || {};
+  for (const key of REQUIRED_SCRIPT_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(scripts, key)) {
+      console.log(`ok    scripts.${key} key present`);
+    } else {
+      console.log(`fail  missing required script key: scripts.${key}`);
+      failures.push(`missing required script key: scripts.${key}`);
+    }
+  }
+}
+
+// 4. Collect-all, then exit.
+if (failures.length > 0) {
+  console.log(`\nhealthcheck FAILED with ${failures.length} problem(s):`);
+  for (const f of failures) console.log(`  - ${f}`);
+  process.exit(1);
+}
+
+console.log('\nhealthcheck OK');
+process.exit(0);
+```
+
+Design decisions tied to constraints:
+- Only `fs`, `path` required; `process` is a global. No external `require`.
+- `path.resolve(__dirname, '..')` → root, independent of cwd.
+- `JSON.parse` wrapped in try/catch → invalid JSON becomes a clean exit-1 failure, not a crash.
+- Script validation checks **key presence** via `hasOwnProperty`, never literal command values.
+- All failures accumulate in `failures[]`; single exit decision at the end.
+- No shebang line.
+
+### 3. `README.md`
+
+Must be non-empty and cover **purpose**, **usage**, and **how the healthcheck works**. Skeleton:
+
+```markdown
+# swarm-sandbox
+
+## Purpose
+A minimal, zero-dependency Node.js project that self-validates its own
+repository structure and manifest integrity via a healthcheck script.
+
+## Usage
+Requires Node.js >= 18. No install step is needed.
+
+    npm test              # runs the healthcheck
+    npm run healthcheck   # same as above
+    node scripts/healthcheck.js
+
+Exit code 0 means healthy; exit code 1 means one or more checks failed.
+
+## How the healthcheck works
+`scripts/healthcheck.js` uses only Node built-in modules (fs, path, process).
+It resolves the repo root from its own location (`__dirname/..`), then:
+1. Confirms each file in the REQUIRED_FILES manifest exists.
+2. Parses package.json (invalid JSON is reported as a failure, not a crash).
+3. Confirms the `scripts.healthcheck` and `scripts.test` keys exist.
+All failures are collected and printed before exiting 0 (pass) or 1 (fail).
+```
+
+---
+
+## Acceptance Criteria → Evidence Mapping
+
+| AC | Requirement | Implementation | Verification command | Expected evidence |
+|----|-------------|----------------|----------------------|-------------------|
+| AC-1 | README non-empty, documents purpose & usage | `README.md` above | `test -s README.md && cat README.md` | Non-empty file containing Purpose/Usage/How-it-works sections |
+| AC-2 | package.json valid, `private:true`, script keys, no deps | `package.json` above | `node -e "const p=JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log(p.private, !!p.scripts.healthcheck, !!p.scripts.test, !p.dependencies, !p.devDependencies)"` | prints `true true true true true` |
+| AC-3 | healthcheck built-ins only, CommonJS, `__dirname` | `scripts/healthcheck.js` above | `grep -nE "require\(" scripts/healthcheck.js` + code review | only `require('fs')`, `require('path')`; uses `__dirname`; no `import`, no shebang |
+| AC-4 | Positive path exit 0 | delegation via scripts | `node scripts/healthcheck.js; echo exit=$?` then `npm run healthcheck; echo exit=$?` then `npm test; echo exit=$?` | all print `exit=0` |
+| AC-5 | Fresh-clone `npm test` with no install | zero deps + delegation | clone into temp dir, `cd` in, `npm test; echo exit=$?` (no `npm install`) | `exit=0` |
+| AC-6 | Negative paths exit 1 with specific message; state restored | collect-all + try/catch | see Negative Verification below | `exit=1` with named failure each case; files restored |
+
+---
+
+## Negative Verification Procedure (AC-6)
+
+Run each case, capture exit code and message, then restore state before the next.
+
+**Case A — missing required file:**
+```
+mv README.md README.tmp
+npm test; echo exit=$?          # expect exit=1, message "missing required file: README.md"
+mv README.tmp README.md
+```
+
+**Case B — missing required script key:**
+```
+cp package.json package.json.bak
+node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));delete p.scripts.healthcheck;fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+node scripts/healthcheck.js; echo exit=$?   # expect exit=1, "missing required script key: scripts.healthcheck"
+mv package.json.bak package.json
+```
+
+**Case C — corrupt package.json:**
+```
+cp package.json package.json.bak
+printf '{ this is not json' > package.json
+node scripts/healthcheck.js; echo exit=$?   # expect exit=1, "invalid JSON in package.json: ..."
+mv package.json.bak package.json
+```
+
+Note: use `node scripts/healthcheck.js` directly for Cases B/C (npm may print its own error wrapper), and confirm the healthcheck's own message appears in output.
+
+---
+
+## Execution Sequence
+
+1. Create `package.json`, `scripts/healthcheck.js`, `README.md`.
+2. Run positive verification (AC-4).
+3. Run negative verification (AC-6), confirming state restoration after each case.
+4. Run static checks (AC-2 `JSON.parse`, AC-3 `grep` for requires).
+5. Perform fresh-clone no-install test (AC-5) — after the commit exists, since clone needs a committed tree; run against a local clone of the working tree or stage-then-clone equivalent.
+6. Single atomic commit of the three files.
+
+Ordering note on AC-5: a true "fresh clone" requires committed content. Sequence: commit → clone the repo to a temp path → `npm test` there. If AC-5 must precede commit, simulate with `git archive`/`git clone .` of the staged tree. Recommend commit-then-clone as the authoritative proof.
+
+---
+
+## Scope Guards
+
+- No files beyond the three deliverables (`.gitignore` only if separately approved).
+- No dependency additions, no `type: module`, no shebang.
+- `REQUIRED_FILES` manifest deliberately omits `.gitignore`.
+- Script validation asserts key presence only, never command string values.
+
+## Evidence to Capture for Sign-off
+
+- Terminal transcript of AC-4 (three `exit=0` lines).
+- Terminal transcript of AC-6 (three `exit=1` cases with messages + restoration).
+- Output of AC-2 one-liner (`true true true true true`).
+- `grep` output for AC-3 showing only built-in requires.
+- Fresh-clone `npm test` transcript for AC-5 (`exit=0`, no install step).
+- `cat README.md` for AC-1.
