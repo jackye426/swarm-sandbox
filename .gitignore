@@ -1,0 +1,4 @@
+node_modules/
+
+# Runtime data store (committed as [] initially)
+data/todos.json
