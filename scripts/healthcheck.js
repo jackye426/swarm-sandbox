@@ -13,6 +13,7 @@ const REQUIRED_FILES = [
   'README.md',
   'package.json',
   'scripts/healthcheck.js',
+  'public/index.html',
 ];
 
 // Script keys that must exist in package.json (presence only, never values).

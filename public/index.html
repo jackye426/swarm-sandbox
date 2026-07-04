@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>To-Do</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #1a1a1a;
+      color: #f0f0f0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 24px 16px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    main {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0 0 16px;
+    }
+
+    #todo-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    #todo-input {
+      flex: 1;
+      background: #2a2a2a;
+      color: #f0f0f0;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    #todo-input:focus {
+      outline: none;
+      border-color: #5a5a5a;
+    }
+
+    #add-button {
+      background: #3a6ea5;
+      color: #f0f0f0;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    #add-button:hover:not(:disabled) {
+      background: #4a7eb5;
+    }
+
+    #add-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #error-banner {
+      background: #4a2222;
+      color: #f0c0c0;
+      border: 1px solid #6a3333;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    #todo-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #todo-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    #todo-list li.empty {
+      justify-content: center;
+      color: #9a9a9a;
+      border-style: dashed;
+    }
+
+    .delete-button {
+      background: transparent;
+      color: #c07070;
+      border: 1px solid #4a3333;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .delete-button:hover {
+      background: #4a2222;
+      color: #f0c0c0;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>To-Do</h1>
+    <form id="todo-form">
+      <input id="todo-input" type="text" placeholder="What needs doing?" autocomplete="off">
+      <button id="add-button" type="submit">Add</button>
+    </form>
+    <div id="error-banner" hidden></div>
+    <ul id="todo-list"></ul>
+  </main>
+  <script>
+    'use strict';
+
+    let els = null;
+
+    function showError(msg) {
+      els.errorBanner.textContent = msg;
+      els.errorBanner.hidden = false;
+    }
+
+    function clearError() {
+      els.errorBanner.textContent = '';
+      els.errorBanner.hidden = true;
+    }
+
+    async function fetchTodos() {
+      const res = await fetch('/api/todos');
+      if (!res.ok) throw new Error('GET /api/todos failed: ' + res.status);
+      return res.json();
+    }
+
+    function renderTodos(items) {
+      els.list.textContent = '';
+      if (items.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'empty';
+        li.textContent = 'No tasks yet';
+        els.list.appendChild(li);
+        return;
+      }
+      for (const todo of items) {
+        const li = document.createElement('li');
+        const span = document.createElement('span');
+        span.textContent = todo.text;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'delete-button';
+        btn.textContent = 'Delete';
+        btn.dataset.id = todo.id;
+        li.appendChild(span);
+        li.appendChild(btn);
+        els.list.appendChild(li);
+      }
+    }
+
+    async function refresh() {
+      renderTodos(await fetchTodos());
+    }
+
+    async function onAdd(event) {
+      event.preventDefault();
+      const text = els.input.value.trim();
+      if (!text) return;
+      els.addButton.disabled = true;
+      try {
+        const res = await fetch('/api/todos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        if (!res.ok) throw new Error('POST /api/todos failed: ' + res.status);
+        await refresh();
+        clearError();
+        els.input.value = '';
+        els.input.focus();
+      } catch (err) {
+        showError('Failed to add task');
+      } finally {
+        els.addButton.disabled = false;
+      }
+    }
+
+    async function onDelete(id) {
+      if (!id) return;
+      try {
+        const res = await fetch('/api/todos/' + encodeURIComponent(id), { method: 'DELETE' });
+        if (!res.ok) throw new Error('DELETE /api/todos failed: ' + res.status);
+        await refresh();
+        clearError();
+      } catch (err) {
+        showError('Failed to delete task');
+      }
+    }
+
+    function main() {
+      els = {
+        form: document.getElementById('todo-form'),
+        input: document.getElementById('todo-input'),
+        addButton: document.getElementById('add-button'),
+        list: document.getElementById('todo-list'),
+        errorBanner: document.getElementById('error-banner')
+      };
+      els.form.addEventListener('submit', onAdd);
+      els.list.addEventListener('click', (event) => {
+        const btn = event.target.closest('.delete-button');
+        if (btn) onDelete(btn.dataset.id);
+      });
+      refresh().catch(() => showError('Failed to load tasks'));
+    }
+
+    document.addEventListener('DOMContentLoaded', main);
+  </script>
+</body>
+</html>
