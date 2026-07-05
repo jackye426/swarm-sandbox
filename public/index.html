@@ -1,245 +1,571 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>To-Do</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Daily Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0f;
+      --card-bg: rgba(255,255,255,0.04);
+      --card-bg-fallback: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.08);
+      --text: #e8e8f0;
+      --text-dim: #9a9ab0;
+      --accent-from: #7c3aed;
+      --accent-to: #2563eb;
+      --high: #f87171;
+      --medium: #fbbf24;
+      --low: #34d399;
     }
 
     body {
-      background: #1a1a1a;
-      color: #f0f0f0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      margin: 0;
-      padding: 24px 16px;
-      display: flex;
-      justify-content: center;
       min-height: 100vh;
+      background: var(--bg) radial-gradient(ellipse at 20% -10%, rgba(124,58,237,0.25), transparent 55%),
+                  radial-gradient(ellipse at 90% 110%, rgba(37,99,235,0.18), transparent 55%);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      padding: 32px 20px 64px;
     }
 
-    main {
-      width: 100%;
-      max-width: 480px;
+    .wrap { max-width: 960px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 28px; }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    header p { color: var(--text-dim); margin-top: 6px; font-size: 0.95rem; }
+
+    /* Glassmorphism cards */
+    .card {
+      background: var(--card-bg-fallback);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+    @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+      .card {
+        background: rgba(255,255,255,0.04);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+    }
+    .card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; }
+
+    /* Responsive two-column grid */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 768px) {
+      .dashboard { grid-template-columns: 1fr; }
     }
 
-    h1 {
-      font-size: 24px;
-      font-weight: 600;
-      margin: 0 0 16px;
+    /* Growth card */
+    .growth-card {
+      position: relative;
+      margin-bottom: 24px;
+      padding: 20px 24px;
+      border-radius: 16px;
+      border: 1px solid transparent;
+      background:
+        linear-gradient(var(--bg), var(--bg)) padding-box,
+        linear-gradient(90deg, var(--accent-from), var(--accent-to)) border-box;
+      font-size: 1.02rem;
+      line-height: 1.55;
+    }
+    .growth-card[hidden] { display: none; }
+    .growth-card .label {
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
     }
 
-    #todo-form {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-
-    #todo-input {
+    /* Task input */
+    .task-input-row { display: flex; gap: 10px; margin-bottom: 16px; }
+    .task-input-row input {
       flex: 1;
-      background: #2a2a2a;
-      color: #f0f0f0;
-      border: 1px solid #3a3a3a;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 14px;
-      font-family: inherit;
-    }
-
-    #todo-input:focus {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text);
+      font: inherit;
       outline: none;
-      border-color: #5a5a5a;
     }
-
-    #add-button {
-      background: #3a6ea5;
-      color: #f0f0f0;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 16px;
-      font-size: 14px;
-      font-family: inherit;
+    .task-input-row input:focus { border-color: var(--accent-from); }
+    .task-input-row button {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 10px 18px;
+      font: inherit;
       cursor: pointer;
     }
+    .task-input-row button:hover { background: rgba(255,255,255,0.14); }
 
-    #add-button:hover:not(:disabled) {
-      background: #4a7eb5;
+    /* Task list */
+    #taskList { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+    .task-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      will-change: transform;
+    }
+    .task-card .task-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .task-card .delete-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+    .task-card .delete-btn:hover { color: var(--high); background: rgba(248,113,113,0.12); }
+
+    .priority-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid;
+    }
+    .priority-high   { color: var(--high);   border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.1); }
+    .priority-medium { color: var(--medium); border-color: rgba(251,191,36,0.4);  background: rgba(251,191,36,0.1); }
+    .priority-low    { color: var(--low);    border-color: rgba(52,211,153,0.4);  background: rgba(52,211,153,0.1); }
+
+    .reason {
+      flex-basis: 100%;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      line-height: 1.45;
     }
 
-    #add-button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    /* Analyze button */
+    .analyze-btn {
+      width: 100%;
+      background: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      padding: 13px 16px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
     }
+    .analyze-btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    #error-banner {
-      background: #4a2222;
-      color: #f0c0c0;
-      border: 1px solid #6a3333;
-      border-radius: 6px;
-      padding: 8px 12px;
-      margin-bottom: 16px;
-      font-size: 14px;
+    /* Thoughts */
+    #thoughtsArea {
+      width: 100%;
+      min-height: 260px;
+      resize: vertical;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--text);
+      font: inherit;
+      line-height: 1.55;
+      outline: none;
     }
+    #thoughtsArea:focus { border-color: var(--accent-to); }
 
-    #todo-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
+    /* Loading overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,15,0.72);
       display: flex;
       flex-direction: column;
-      gap: 8px;
-    }
-
-    #todo-list li {
-      display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      background: #2a2a2a;
-      border: 1px solid #3a3a3a;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 14px;
-      word-break: break-word;
-    }
-
-    #todo-list li.empty {
       justify-content: center;
-      color: #9a9a9a;
-      border-style: dashed;
+      gap: 16px;
+      z-index: 50;
     }
+    .overlay[hidden] { display: none; }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.15);
+      border-top-color: var(--accent-from);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loadingMsg { color: var(--text-dim); }
 
-    .delete-button {
-      background: transparent;
-      color: #c07070;
-      border: 1px solid #4a3333;
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 13px;
-      font-family: inherit;
-      cursor: pointer;
-      flex-shrink: 0;
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translate(-50%, 120%);
+      background: rgba(30,10,15,0.92);
+      border: 1px solid rgba(248,113,113,0.5);
+      color: #fecaca;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      max-width: min(90vw, 480px);
+      opacity: 0;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+      z-index: 60;
+      pointer-events: none;
     }
-
-    .delete-button:hover {
-      background: #4a2222;
-      color: #f0c0c0;
-    }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
   </style>
 </head>
 <body>
-  <main>
-    <h1>To-Do</h1>
-    <form id="todo-form">
-      <input id="todo-input" type="text" placeholder="What needs doing?" autocomplete="off">
-      <button id="add-button" type="submit">Add</button>
-    </form>
-    <div id="error-banner" hidden></div>
-    <ul id="todo-list"></ul>
-  </main>
+  <div class="wrap">
+    <header>
+      <h1>AI Daily Dashboard</h1>
+      <p>Plan your day, capture your thoughts, let AI prioritize.</p>
+    </header>
+
+    <div class="growth-card" id="growthCard" hidden>
+      <span class="label">Growth mindset</span>
+      <span id="growthMessage"></span>
+    </div>
+
+    <main class="dashboard">
+      <section class="card tasks-column">
+        <h2>Tasks</h2>
+        <div class="task-input-row">
+          <input id="taskInput" type="text" placeholder="Add a task..." aria-label="New task">
+          <button id="addBtn" type="button">Add</button>
+        </div>
+        <ul id="taskList" aria-live="polite"></ul>
+        <button id="analyzeBtn" class="analyze-btn" type="button" disabled>&#10024; Analyze</button>
+      </section>
+
+      <section class="card thoughts-column">
+        <h2>Today's Thoughts</h2>
+        <textarea id="thoughtsArea" aria-label="Daily thoughts" placeholder="How is your day going?"></textarea>
+      </section>
+    </main>
+  </div>
+
+  <div id="overlay" class="overlay" hidden>
+    <div class="spinner" aria-hidden="true"></div>
+    <p id="loadingMsg">Analyzing...</p>
+  </div>
+
+  <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
+
   <script>
     'use strict';
 
-    let els = null;
+    // ---------- State ----------
+    let tasks = [];        // [{ id, text, priority?, reason? }]
+    let thoughts = '';
 
-    function showError(msg) {
-      els.errorBanner.textContent = msg;
-      els.errorBanner.hidden = false;
+    const taskInput = document.getElementById('taskInput');
+    const addBtn = document.getElementById('addBtn');
+    const taskList = document.getElementById('taskList');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const thoughtsArea = document.getElementById('thoughtsArea');
+    const growthCard = document.getElementById('growthCard');
+    const growthMessageEl = document.getElementById('growthMessage');
+    const overlay = document.getElementById('overlay');
+    const loadingMsg = document.getElementById('loadingMsg');
+    const toastEl = document.getElementById('toast');
+
+    // ---------- XSS protection ----------
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
-    function clearError() {
-      els.errorBanner.textContent = '';
-      els.errorBanner.hidden = true;
+    function uuid() {
+      return (crypto.randomUUID && crypto.randomUUID()) ||
+        'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
     }
 
-    async function fetchTodos() {
-      const res = await fetch('/api/todos');
-      if (!res.ok) throw new Error('GET /api/todos failed: ' + res.status);
-      return res.json();
-    }
-
-    function renderTodos(items) {
-      els.list.textContent = '';
-      if (items.length === 0) {
-        const li = document.createElement('li');
-        li.className = 'empty';
-        li.textContent = 'No tasks yet';
-        els.list.appendChild(li);
-        return;
-      }
-      for (const todo of items) {
-        const li = document.createElement('li');
-        const span = document.createElement('span');
-        span.textContent = todo.text;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'delete-button';
-        btn.textContent = 'Delete';
-        btn.dataset.id = todo.id;
-        li.appendChild(span);
-        li.appendChild(btn);
-        els.list.appendChild(li);
-      }
-    }
-
-    async function refresh() {
-      renderTodos(await fetchTodos());
-    }
-
-    async function onAdd(event) {
-      event.preventDefault();
-      const text = els.input.value.trim();
-      if (!text) return;
-      els.addButton.disabled = true;
+    // ---------- Persistence (localStorage with legacy migration) ----------
+    function loadTasks() {
       try {
-        const res = await fetch('/api/todos', {
+        const raw = localStorage.getItem('dashboard.tasks');
+        if (!raw) { tasks = []; return; }
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) { tasks = []; return; }
+        // Legacy migration: plain strings -> { id, text } (idempotent; keep backup)
+        if (parsed.some(function (t) { return typeof t === 'string'; })) {
+          try { localStorage.setItem('dashboard.tasks_legacy_backup', raw); } catch (e) { /* ignore */ }
+          tasks = parsed.map(function (t) {
+            return typeof t === 'string' ? { id: uuid(), text: t } : t;
+          }).filter(function (t) { return t && typeof t.text === 'string'; });
+          saveTasks();
+        } else {
+          tasks = parsed.filter(function (t) { return t && typeof t.text === 'string'; })
+            .map(function (t) { return t.id ? t : Object.assign({ id: uuid() }, t); });
+        }
+      } catch (e) {
+        tasks = [];
+      }
+    }
+
+    function saveTasks() {
+      try {
+        localStorage.setItem('dashboard.tasks', JSON.stringify(tasks));
+      } catch (e) { /* quota exceeded or unavailable — keep in-memory state */ }
+    }
+
+    function loadThoughts() {
+      try {
+        thoughts = localStorage.getItem('dashboard.thoughts') || '';
+      } catch (e) {
+        thoughts = '';
+      }
+      thoughtsArea.value = thoughts;
+    }
+
+    function saveThoughts() {
+      try {
+        localStorage.setItem('dashboard.thoughts', thoughts);
+      } catch (e) { /* ignore */ }
+    }
+
+    function debounce(fn, ms) {
+      let t;
+      return function () {
+        clearTimeout(t);
+        t = setTimeout(fn, ms);
+      };
+    }
+    const saveThoughtsDebounced = debounce(saveThoughts, 400);
+
+    // ---------- Rendering ----------
+    const PRIORITY_CLASS = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
+
+    function priorityInfo(p) {
+      // Accept "high"/"medium"/"low" or numeric (1 = highest)
+      if (typeof p === 'string' && PRIORITY_CLASS[p.toLowerCase()]) {
+        const key = p.toLowerCase();
+        return { label: key, cls: PRIORITY_CLASS[key] };
+      }
+      const n = Number(p);
+      if (!isNaN(n) && n > 0) {
+        if (n <= 1) return { label: 'high', cls: 'priority-high' };
+        if (n <= 2) return { label: 'medium', cls: 'priority-medium' };
+        return { label: 'low', cls: 'priority-low' };
+      }
+      return null;
+    }
+
+    function renderTasks() {
+      taskList.innerHTML = tasks.map(function (t) {
+        const info = t.priority != null ? priorityInfo(t.priority) : null;
+        return '<li class="task-card" data-id="' + escapeHtml(t.id) + '">' +
+          (info ? '<span class="priority-badge ' + info.cls + '">' + escapeHtml(info.label) + '</span>' : '') +
+          '<span class="task-text">' + escapeHtml(t.text) + '</span>' +
+          '<button class="delete-btn" type="button" aria-label="Delete task: ' + escapeHtml(t.text) + '">&times;</button>' +
+          (t.reason ? '<span class="reason">' + escapeHtml(t.reason) + '</span>' : '') +
+          '</li>';
+      }).join('');
+      updateAnalyzeButton();
+    }
+
+    function updateAnalyzeButton() {
+      analyzeBtn.disabled = tasks.length === 0;
+    }
+
+    // ---------- Task actions ----------
+    function addTask() {
+      const text = taskInput.value.trim();
+      if (!text) return;
+      tasks.push({ id: uuid(), text: text });
+      taskInput.value = '';
+      saveTasks();
+      renderTasks();
+      taskInput.focus();
+    }
+
+    function deleteTask(id) {
+      tasks = tasks.filter(function (t) { return t.id !== id; });
+      saveTasks();
+      renderTasks();
+    }
+
+    // ---------- FLIP animation for priority reordering ----------
+    function animateReorder(container, sortedTasks) {
+      // First: record current positions by task id
+      const first = {};
+      Array.prototype.forEach.call(container.children, function (el) {
+        first[el.dataset.id] = el.getBoundingClientRect();
+      });
+
+      // Apply new order and re-render
+      tasks = sortedTasks;
+      renderTasks();
+
+      // Last + Invert: measure new positions, translate back to old ones
+      Array.prototype.forEach.call(container.children, function (el) {
+        const prev = first[el.dataset.id];
+        if (!prev) return;
+        const next = el.getBoundingClientRect();
+        const dx = prev.left - next.left;
+        const dy = prev.top - next.top;
+        if (dx === 0 && dy === 0) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+      });
+
+      // Play: animate to natural position
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          Array.prototype.forEach.call(container.children, function (el) {
+            el.style.transition = 'transform 0.4s ease-out';
+            el.style.transform = '';
+          });
+        });
+      });
+    }
+
+    // ---------- Toast ----------
+    let toastTimer;
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toastEl.classList.remove('show');
+      }, 5000);
+    }
+
+    // ---------- Analyze (POST /api/ai) ----------
+    async function analyze() {
+      if (tasks.length === 0) return;
+
+      analyzeBtn.disabled = true;
+      loadingMsg.textContent = 'Analyzing...';
+      overlay.hidden = false;
+
+      const controller = new AbortController();
+      const slowTimer = setTimeout(function () {
+        loadingMsg.textContent = 'Still working...';
+      }, 10000);
+      const abortTimer = setTimeout(function () {
+        controller.abort();
+      }, 20000);
+
+      try {
+        const response = await fetch('/api/ai', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
+          body: JSON.stringify({
+            tasks: tasks.map(function (t) { return { id: t.id, text: t.text }; }),
+            thoughts: thoughts
+          }),
+          signal: controller.signal
         });
-        if (!res.ok) throw new Error('POST /api/todos failed: ' + res.status);
-        await refresh();
-        clearError();
-        els.input.value = '';
-        els.input.focus();
-      } catch (err) {
-        showError('Failed to add task');
+
+        if (!response.ok) {
+          showToast('Analysis failed: server responded with status ' + response.status);
+          return;
+        }
+
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          showToast('Analysis failed: invalid response from server');
+          return;
+        }
+
+        // Defensive parsing with defaults
+        const prioritized = Array.isArray(data && data.prioritizedTasks) ? data.prioritizedTasks : [];
+        const growthMessage = (data && typeof data.growthMessage === 'string') ? data.growthMessage : '';
+
+        // Merge priorities/reasons into tasks by id
+        const byId = {};
+        prioritized.forEach(function (p, i) {
+          if (p && p.id != null) {
+            byId[p.id] = { priority: p.priority != null ? p.priority : 0, reason: p.reason || '', rank: i };
+          }
+        });
+        const merged = tasks.map(function (t) {
+          const p = byId[t.id];
+          return p
+            ? Object.assign({}, t, { priority: p.priority, reason: p.reason, _rank: p.rank })
+            : Object.assign({}, t, { _rank: Number.MAX_SAFE_INTEGER });
+        });
+        merged.sort(function (a, b) { return a._rank - b._rank; });
+        merged.forEach(function (t) { delete t._rank; });
+
+        animateReorder(taskList, merged);
+        saveTasks();
+
+        if (growthMessage) {
+          growthMessageEl.innerHTML = escapeHtml(growthMessage);
+          growthCard.hidden = false;
+        }
+      } catch (e) {
+        if (e.name === 'AbortError') {
+          showToast('Request timed out after 20 seconds. Please try again.');
+        } else {
+          showToast('Network error: unable to reach the AI service. Your tasks are safe.');
+        }
       } finally {
-        els.addButton.disabled = false;
+        clearTimeout(slowTimer);
+        clearTimeout(abortTimer);
+        overlay.hidden = true;
+        updateAnalyzeButton();
       }
     }
 
-    async function onDelete(id) {
-      if (!id) return;
-      try {
-        const res = await fetch('/api/todos/' + encodeURIComponent(id), { method: 'DELETE' });
-        if (!res.ok) throw new Error('DELETE /api/todos failed: ' + res.status);
-        await refresh();
-        clearError();
-      } catch (err) {
-        showError('Failed to delete task');
-      }
-    }
+    // ---------- Events ----------
+    addBtn.addEventListener('click', addTask);
+    taskInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') addTask();
+    });
+    taskList.addEventListener('click', function (e) {
+      const btn = e.target.closest('.delete-btn');
+      if (!btn) return;
+      const li = btn.closest('.task-card');
+      if (li) deleteTask(li.dataset.id);
+    });
+    thoughtsArea.addEventListener('input', function () {
+      thoughts = thoughtsArea.value;
+      saveThoughtsDebounced();
+    });
+    analyzeBtn.addEventListener('click', analyze);
 
-    function main() {
-      els = {
-        form: document.getElementById('todo-form'),
-        input: document.getElementById('todo-input'),
-        addButton: document.getElementById('add-button'),
-        list: document.getElementById('todo-list'),
-        errorBanner: document.getElementById('error-banner')
-      };
-      els.form.addEventListener('submit', onAdd);
-      els.list.addEventListener('click', (event) => {
-        const btn = event.target.closest('.delete-button');
-        if (btn) onDelete(btn.dataset.id);
-      });
-      refresh().catch(() => showError('Failed to load tasks'));
-    }
-
-    document.addEventListener('DOMContentLoaded', main);
+    // ---------- Init ----------
+    loadTasks();
+    loadThoughts();
+    renderTasks();
   </script>
 </body>
 </html>
