@@ -11,7 +11,7 @@
     "healthcheck": "node scripts/healthcheck.js",
     "test": "node scripts/healthcheck.js",
     "start": "node server.js",
-    "test:api": "node scripts/test-api.js"
+    "test:api": "node scripts/test-api.js && node test-api.js"
   },
   "dependencies": {
     "express": "^4.21.2"
