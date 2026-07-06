@@ -11,83 +11,65 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg: #0a0a0f;
-      --card-bg: rgba(255,255,255,0.04);
-      --card-bg-fallback: rgba(255,255,255,0.08);
+      --bg: #0f0f10;
+      --surface: #1a1a1c;
+      --surface-raised: #202023;
       --border: rgba(255,255,255,0.08);
-      --text: #e8e8f0;
-      --text-dim: #9a9ab0;
-      --accent-from: #7c3aed;
-      --accent-to: #2563eb;
-      --high: #f87171;
-      --medium: #fbbf24;
-      --low: #34d399;
+      --border-strong: rgba(255,255,255,0.16);
+      --text: #e8e8ea;
+      --text-dim: #98989f;
+      --accent: #3b6ef5;
+      --accent-hover: #5583f7;
     }
 
     body {
       min-height: 100vh;
-      background: var(--bg) radial-gradient(ellipse at 20% -10%, rgba(124,58,237,0.25), transparent 55%),
-                  radial-gradient(ellipse at 90% 110%, rgba(37,99,235,0.18), transparent 55%);
+      background: var(--bg);
       color: var(--text);
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      padding: 32px 20px 64px;
+      padding: 48px 24px 72px;
+      line-height: 1.6;
     }
 
-    .wrap { max-width: 960px; margin: 0 auto; }
+    .wrap { max-width: 680px; margin: 0 auto; }
 
-    header { text-align: center; margin-bottom: 28px; }
+    header { margin-bottom: 40px; }
     header h1 {
-      font-size: 2rem;
+      font-size: 1.75rem;
       font-weight: 700;
-      background: linear-gradient(90deg, var(--accent-from), var(--accent-to));
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+      color: var(--text);
     }
-    header p { color: var(--text-dim); margin-top: 6px; font-size: 0.95rem; }
+    header p { color: var(--text-dim); margin-top: 8px; font-size: 0.95rem; }
 
-    /* Glassmorphism cards */
+    /* Flat cards */
     .card {
-      background: var(--card-bg-fallback);
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 10px;
       padding: 24px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     }
-    @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
-      .card {
-        background: rgba(255,255,255,0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-      }
-    }
-    .card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; }
 
-    /* Responsive two-column grid */
+    /* Single-column layout */
     .dashboard {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
+      flex-direction: column;
       gap: 24px;
-    }
-    @media (max-width: 768px) {
-      .dashboard { grid-template-columns: 1fr; }
     }
 
     /* Growth card */
-    .growth-card {
-      position: relative;
+    #growthCard {
       margin-bottom: 24px;
       padding: 20px 24px;
-      border-radius: 16px;
-      border: 1px solid transparent;
-      background:
-        linear-gradient(var(--bg), var(--bg)) padding-box,
-        linear-gradient(90deg, var(--accent-from), var(--accent-to)) border-box;
-      font-size: 1.02rem;
-      line-height: 1.55;
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      font-size: 1rem;
+      line-height: 1.6;
     }
-    .growth-card[hidden] { display: none; }
-    .growth-card .label {
+    #growthCard[hidden] { display: none; }
+    #growthCard .label {
       display: block;
       font-size: 0.72rem;
       letter-spacing: 0.12em;
@@ -95,37 +77,38 @@
       color: var(--text-dim);
       margin-bottom: 6px;
     }
+    #growthMessage { color: var(--text); }
 
     /* Task input */
     .task-input-row { display: flex; gap: 10px; margin-bottom: 16px; }
-    .task-input-row input {
+    #taskInput {
       flex: 1;
-      background: rgba(255,255,255,0.06);
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 10px 14px;
       color: var(--text);
       font: inherit;
       outline: none;
     }
-    .task-input-row input:focus { border-color: var(--accent-from); }
-    .task-input-row button {
-      background: rgba(255,255,255,0.08);
+    #taskInput:focus { border-color: var(--border-strong); }
+    #addBtn {
+      background: var(--surface-raised);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 8px;
       color: var(--text);
       padding: 10px 18px;
       font: inherit;
       cursor: pointer;
     }
-    .task-input-row button:hover { background: rgba(255,255,255,0.14); }
+    #addBtn:hover { background: #28282c; }
 
     /* Task list */
     #taskList { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
     .task-card {
-      background: rgba(255,255,255,0.05);
+      background: var(--surface-raised);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 8px;
       padding: 12px 14px;
       display: flex;
       flex-wrap: wrap;
@@ -142,10 +125,11 @@
       line-height: 1;
       cursor: pointer;
       padding: 4px 8px;
-      border-radius: 8px;
+      border-radius: 6px;
     }
-    .task-card .delete-btn:hover { color: var(--high); background: rgba(248,113,113,0.12); }
+    .task-card .delete-btn:hover { color: var(--text); background: rgba(255,255,255,0.08); }
 
+    /* Priority badges: single muted accent, flat */
     .priority-badge {
       font-size: 0.7rem;
       font-weight: 600;
@@ -153,11 +137,13 @@
       text-transform: uppercase;
       padding: 3px 10px;
       border-radius: 999px;
-      border: 1px solid;
+      border: 1px solid rgba(59,110,245,0.3);
+      background: rgba(59,110,245,0.15);
+      color: #8ab0ff;
     }
-    .priority-high   { color: var(--high);   border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.1); }
-    .priority-medium { color: var(--medium); border-color: rgba(251,191,36,0.4);  background: rgba(251,191,36,0.1); }
-    .priority-low    { color: var(--low);    border-color: rgba(52,211,153,0.4);  background: rgba(52,211,153,0.1); }
+    .priority-high   { background: rgba(59,110,245,0.28); border-color: rgba(59,110,245,0.5);  color: #aec7ff; }
+    .priority-medium { background: rgba(59,110,245,0.15); border-color: rgba(59,110,245,0.3);  color: #8ab0ff; }
+    .priority-low    { background: rgba(59,110,245,0.07); border-color: rgba(59,110,245,0.18); color: #7c95d9; }
 
     .reason {
       flex-basis: 100%;
@@ -166,43 +152,43 @@
       line-height: 1.45;
     }
 
-    /* Analyze button */
-    .analyze-btn {
+    /* Analyze button: sole accent-colored control */
+    #analyzeBtn {
       width: 100%;
-      background: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+      background: var(--accent);
       border: none;
-      border-radius: 12px;
+      border-radius: 8px;
       color: #fff;
       font: inherit;
       font-weight: 600;
       padding: 13px 16px;
       cursor: pointer;
-      transition: opacity 0.2s, transform 0.15s;
+      transition: background 0.2s;
     }
-    .analyze-btn:hover:not(:disabled) { transform: translateY(-1px); }
-    .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    #analyzeBtn:hover:not(:disabled) { background: var(--accent-hover); }
+    #analyzeBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     /* Thoughts */
     #thoughtsArea {
       width: 100%;
       min-height: 260px;
       resize: vertical;
-      background: rgba(255,255,255,0.05);
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 8px;
       padding: 14px;
       color: var(--text);
       font: inherit;
-      line-height: 1.55;
+      line-height: 1.6;
       outline: none;
     }
-    #thoughtsArea:focus { border-color: var(--accent-to); }
+    #thoughtsArea:focus { border-color: var(--border-strong); }
 
-    /* Loading overlay */
-    .overlay {
+    /* Loading overlay: flat translucent, no blur */
+    #overlay {
       position: fixed;
       inset: 0;
-      background: rgba(10,10,15,0.72);
+      background: rgba(15,15,16,0.85);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -210,29 +196,29 @@
       gap: 16px;
       z-index: 50;
     }
-    .overlay[hidden] { display: none; }
+    #overlay[hidden] { display: none; }
     .spinner {
       width: 44px;
       height: 44px;
       border-radius: 50%;
       border: 4px solid rgba(255,255,255,0.15);
-      border-top-color: var(--accent-from);
+      border-top-color: var(--text);
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     #loadingMsg { color: var(--text-dim); }
 
-    /* Toast */
-    .toast {
+    /* Toast: flat dark surface */
+    #toast {
       position: fixed;
       left: 50%;
       bottom: 28px;
       transform: translate(-50%, 120%);
-      background: rgba(30,10,15,0.92);
-      border: 1px solid rgba(248,113,113,0.5);
-      color: #fecaca;
+      background: var(--surface-raised);
+      border: 1px solid var(--border-strong);
+      color: var(--text);
       padding: 12px 20px;
-      border-radius: 12px;
+      border-radius: 8px;
       font-size: 0.92rem;
       max-width: min(90vw, 480px);
       opacity: 0;
@@ -240,7 +226,13 @@
       z-index: 60;
       pointer-events: none;
     }
-    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    #toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+    /* Small screens: spacing adjustments only (layout is already single-column) */
+    @media (max-width: 480px) {
+      body { padding: 32px 16px 56px; }
+      .card { padding: 18px; }
+    }
   </style>
 </head>
 <body>
@@ -280,6 +272,7 @@
 
   <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
 
+  <!-- Analyze flow: POST fetch('/api/ai') with { tasks, thoughts }; 10s slow-message timer, 20s abort. -->
   <script>
     'use strict';
 
